@@ -30,6 +30,7 @@ class FiveSim:
         self.key = api_key
         self._lock = threading.Lock()
         self._last = 0.0
+        self.last_cost = 0.0
 
     # ----------------------------------------------------------------- low level
     def _get(self, path: str, retries: int = 3) -> dict | str:

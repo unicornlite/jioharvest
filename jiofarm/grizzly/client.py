@@ -22,6 +22,7 @@ class GrizzlySMS:
         self.key = api_key
         self._lock = threading.Lock()
         self._last = 0.0
+        self.last_cost = 0.0
 
     # ----------------------------------------------------------------- low level
     def _get(self, params: dict, retries: int = 4) -> str:
@@ -54,14 +55,17 @@ class GrizzlySMS:
         raise GrizzlyError(f"balance error: {out}")
 
     def rent(self, max_price: float | None = None) -> tuple[str, str]:
-        p: dict = {"action": "getNumber", "service": "jio", "country": 22}
-        if max_price is not None:
-            p["maxPrice"] = max_price
-        out = self._get(p)
-        if out.startswith("ACCESS_NUMBER:"):
-            _, act_id, phone = out.split(":", 2)
-            return act_id, phone
-        raise GrizzlyError(out)
+            p: dict = {"action": "getNumber", "service": "jio", "country": 22}
+            if max_price is not None:
+                p["maxPrice"] = max_price
+            out = self._get(p)
+            if out.startswith("ACCESS_NUMBER:"):
+                _, act_id, phone = out.split(":", 2)
+                # try to extract cost from response (Grizzly format: ACCESS_NUMBER:act_id:phone:cost)
+                parts = out.split(":")
+                self.last_cost = float(parts[3]) if len(parts) >= 4 else 0.0
+                return act_id, phone
+            raise GrizzlyError(out)
 
     def status(self, act_id: str) -> tuple[str, str | None]:
         out = self._get({"action": "getStatus", "id": act_id})

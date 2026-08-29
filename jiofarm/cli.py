@@ -205,12 +205,17 @@ def run(
     concurrency: Optional[int] = typer.Option(None, "-c", "--concurrency", help="Jumlah sewa paralel aktif"),
     max_price: Optional[float] = typer.Option(None, "--max-price", help="Harga maksimum per nomor USD"),
     db: str = typer.Option("results.db", "--db", help="Path database SQLite"),
+    dry_run: bool = typer.Option(False, "--dry-run", help="Mode uji tanpa jaringan (pakai provider mock)"),
 ) -> None:
     """Jalankan perburuan link Google AI Pro."""
+    import os as _os
+    if dry_run:
+        _os.environ["PROVIDER"] = "mock"
     cfg = load_config()
     cfg.max_price_override = max_price
     cfg.concurrency_override = concurrency
     cfg.db_path = db
+    cfg.dry_run = dry_run
 
     if target is not None:
         cfg.target = target
@@ -345,6 +350,18 @@ def links(
             console.print("[warning]Belum ada link tersimpan.[/]")
         for i, l in enumerate(all_links, 1):
             console.print(f"[dim]{i}.[/] [link]{l}[/]")
+
+
+@app.command()
+def web(
+    port: int = typer.Option(9121, "--port", "-p", help="Port WebUI"),
+    host: str = typer.Option("127.0.0.1", "--host", help="Bind host (0.0.0.0 untuk LAN)"),
+    db: str = typer.Option("results.db", "--db", help="Path database SQLite"),
+) -> None:
+    """Jalankan Web UI monitor (zero-dependency, stdlib only)."""
+    from jiofarm.webui import serve
+
+    serve(db_path=db, host=host, port=port)
 
 
 @app.command()

@@ -25,6 +25,9 @@ def load_config() -> "Config":
 
     provider = os.getenv("PROVIDER", "grizzlysms").strip().lower()
 
+    if provider == "mock":
+        return Config(provider=provider, api_key="", product="mock")
+
     if provider == "grizzlysms":
         api_key = os.getenv("GRIZZLY_API_KEY", "").strip()
         if not api_key or api_key == "your_api_key_here":
@@ -61,6 +64,7 @@ def load_config() -> "Config":
         db_path=os.getenv("DB_PATH", "results.db"),
         tg_bot_token=os.getenv("TG_BOT_TOKEN", "").strip(),
         tg_chat_id=os.getenv("TG_CHAT_ID", "").strip(),
+        webhook_urls=[u.strip() for u in os.getenv("WEBHOOK_URLS", "").split(",") if u.strip()],
     )
 
 
@@ -81,12 +85,16 @@ class Config:
     tg_bot_token: str = ""
     tg_chat_id: str = ""
 
+    # webhooks (optional) — comma-separated URLs for Discord/Slack/ntfy
+    webhook_urls: list[str] = field(default_factory=list)
+
     # runtime overrides (set by CLI)
     max_price_override: float | None = field(default=None, repr=False)
     target: int | None = field(default=None, repr=False)
     duration: float | None = field(default=None, repr=False)
     count: int = field(default=1, repr=False)
     concurrency_override: int | None = field(default=None, repr=False)
+    dry_run: bool = field(default=False, repr=False)
 
     @property
     def effective_max_price(self) -> float | None:

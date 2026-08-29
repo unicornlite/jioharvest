@@ -26,6 +26,16 @@ from jiofarm.jio.hunt import hunt_link
 from jiofarm.storage.store import Store
 
 
+# ------------------------------------------------------------------- fake hunt for dry-run / dev
+
+def _fake_hunt_link() -> str | None:
+    """Return a fake link ~30% of the time so dry-run mode exercises the whole pipeline."""
+    import random
+    if random.random() < 0.3:
+        return "https://serviceactivation.google.com/promo/fake-test-link-123"
+    return None
+
+
 # ------------------------------------------------------------------- provider protocol
 
 
@@ -125,7 +135,11 @@ def hunt_once(
 
         # 2) check subscriber -----------------------------------------------
         state.phase = Phase.CHECKING
-        if not jio_check_subscriber(state.phone):
+        if cfg.dry_run:
+            jio_check = lambda p: True  # noqa: E731 -- offline stub
+        else:
+            jio_check = jio_check_subscriber
+        if not jio_check(state.phone):
             state.phase = Phase.ERROR
             state.error = "bukan pelanggan Jio"
             refunds.schedule(state.act_id, 120, aggressive=True)
@@ -145,7 +159,11 @@ def hunt_once(
 
         # 4) send OTP -------------------------------------------------------
         state.phase = Phase.SENDING_OTP
-        if not jio_send_otp(s, state.phone):
+        if cfg.dry_run:
+            jio_send = lambda s, p: True  # noqa: E731 -- offline stub
+        else:
+            jio_send = jio_send_otp
+        if not jio_send(s, state.phone):
             state.phase = Phase.ERROR
             state.error = "OTP gagal dikirim"
             refunds.schedule(state.act_id, cfg.otp_fail_delay)
@@ -159,7 +177,11 @@ def hunt_once(
 
         # 6) validate OTP ---------------------------------------------------
         state.phase = Phase.VALIDATING
-        if not jio_validate_otp(s, state.otp):
+        if cfg.dry_run:
+            jio_validate = lambda s, o: True  # noqa: E731 -- offline stub
+        else:
+            jio_validate = jio_validate_otp
+        if not jio_validate(s, state.otp):
             state.phase = Phase.ERROR
             state.error = "OTP invalid"
             refunds.schedule(state.act_id, cfg.cancel_delay)
@@ -169,16 +191,18 @@ def hunt_once(
 
         # 7) hunt link ------------------------------------------------------
         state.phase = Phase.HUNTING
-        link = hunt_link(s)
+        if cfg.dry_run:
+            link = _fake_hunt_link()
+        else:
+            link = hunt_link(s)
         provider.complete(state.act_id)
 
         if link:
             state.link = link
             state.phase = Phase.DONE
-            tg_send(
+            notify_all(
                 f"🎯 Google AI Pro link!\n\nNomor : {state.phone}\nLink :\n{link}",
-                cfg.tg_bot_token,
-                cfg.tg_chat_id,
+                cfg,
             )
         else:
             state.phase = Phase.DONE
@@ -195,7 +219,8 @@ def hunt_once(
             refunds.schedule(state.act_id, cfg.cancel_delay)
         return None
     finally:
-        store.save(state.phone, state.act_id, state.otp, state.logged_in, state.link)
+        cost = getattr(provider, "last_cost", 0.0)
+        store.save(state.phone, state.act_id, state.otp, state.logged_in, state.link, cost)
         state.attempts += 1
         slots.release()
 
@@ -213,5 +238,9 @@ def create_provider(cfg: Config) -> SMSProvider:
         from jiofarm.fivesim.client import FiveSim
 
         return FiveSim(cfg.api_key)  # type: ignore[return-value]
+    elif cfg.provider == "mock":
+        from jiofarm.mock.client import MockSMS
+
+        return MockSMS(cfg)  # type: ignore[return-value]
     else:
         raise SystemExit(f"Provider tidak dikenal: {cfg.provider}")

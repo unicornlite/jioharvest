@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "jiofarm"
-version = "2.0.0"
-description = "Jio Google AI Pro Hunter — panen link redeem Gemini Pro"
+version = "2.1.0"
+description = "Jio Google AI Pro Hunter — panen link redeem Gemini Pro (Hermes fork)"
 requires-python = ">=3.9"
 dependencies = [
     "requests>=2.31.0",
