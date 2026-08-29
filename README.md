@@ -1,277 +1,156 @@
-# 🦁 JioFarm
+# 🦁 JioHarvest — Google AI Pro / Gemini Pro Link Hunter
 
-<div align="center">
-
-**Google AI Pro / Gemini Pro Link Hunter**
-
-*Panen link redeem Google AI Pro dari Jio selfcare secara otomatis*
+> **Fork kencang dari JioFarm v2.0** — Mock provider, analytics, link verification, webhooks multi-channel, dan WebUI monitor. **Zero-dependency dashboard.**
 
 [![Python](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Rich](https://img.shields.io/badge/terminal-rich-purple.svg)](https://github.com/Textualize/rich)
-
-</div>
+[![WebUI](https://img.shields.io/badge/WebUI-stdlib-8A2BE2.svg)](https://github.com/unicornlite/jioharvest)
+[![Mock](https://img.shields.io/badge/Mock%20DryRun-2ea44f.svg)](https://github.com/unicornlite/jioharvest)
 
 ---
 
 ## 📖 Apa Ini?
 
-JioFarm adalah tool otomatis yang:
+JioHarvest adalah tool otomatis yang:
+
 1. **Menyewa** nomor virtual Jio (India) dari berbagai SMS provider
 2. **Login** ke Jio selfcare pakai OTP yang diterima nomor tersebut
 3. **Berburu** link redeem Google AI Pro / Gemini Pro dari API subscription Jio
-4. **Notifikasi** ke Telegram begitu link ditemukan
+4. **Notifikasi** ke Telegram, Discord, Slack, atau webhook kustom
+5. **Pantau** real-time via WebUI zero-dependency (stdlib only, port 9121)
 
-Dilengkapi **live dashboard** berbasis Rich yang menampilkan status worker secara real-time.
+Dilengkapi **live dashboard** berbasis Rich di terminal + **WebUI dark mode** untuk monitoring dari HP.
 
-**Multi-provider:** JioFarm punya arsitektur modular yang mendukung berbagai SMS provider. Ganti provider tinggal ubah 1 baris di `.env` — tanpa ganti kode.
+**JioHarvest vs JioFarm original:**
+
+| Fitur | JioFarm | JioHarvest |
+|---|---|---|
+| Mock Provider (dev/test) | ❌ | ✅ `--dry-run` |
+| Cost per link / Hit Rate | ❌ | ✅ SQLite analytics |
+| Link Verification | ❌ | ✅ auto-check validitas |
+| Discord / Slack / ntfy | ❌ | ✅ webhooks multi-channel |
+| WebUI Monitor | ❌ | ✅ stdlib, zero-dep, port 9121 |
+| Multi-provider (Grizzly+5SIM) | ✅ | ✅ + mock provider |
 
 ---
 
 ## 🖥️ Live Dashboard Preview
 
-```
-┌─ 🦁 JioFarm Hunter ───────────────────────────────────────────────┐
-│ workers: 2 | max-price: $0.5 | refund pending: 0                   │
+```text
+┌─ 🦁 JioHarvest Hunter ─────────────────────────────────────────────┐
+│ workers: 2 | max-price: $0.5 | refund pending: 0                    │
 │ ⏱ 45s elapsed | 💰 $2.50 | 🎯 1 links                              │
-└────────────────────────────────────────────────────────────────────┘
-┌─ Workers ───────────────────────────┐ ┌─ 🎯 Links Found ──────────┐
-│ W  Phase          Phone    Status   │ │ https://serviceactivation. │
-│ 1  ✅ DONE       +91 9876  LINK!    │ │ google.com/...             │
-│ 2  ⏳ WAITING_OTP +91 5432  wait... │ │                            │
-└─────────────────────────────────────┘ └────────────────────────────┘
-┌─ Ctrl+C to stop ──────────────────────────────────────────────────┐
+└─────────────────────────────────────────────────────────────────────┘
+┌─ Workers ────────────────────────────┐ ┌─ 🎯 Links Found ──────────┐
+│ W  Phase          Phone    Status    │ │ https://serviceactivation. │
+│ 1  ✅ DONE       +91 9876  LINK!     │ │ google.com/...             │
+│ 2  ⏳ WAITING_OTP +91 5432  wait...  │ │                            │
+└──────────────────────────────────────┘ └────────────────────────────┘
 ```
+
+### 🌐 WebUI Monitor (zero-dependency)
+
+```text
+python -m jiofarm web --port 9121
+→ http://127.0.0.1:9121
+```
+
+Dark mode, auto-refresh 5s, kartu statistik, tabel hunt real-time. **Bisa dipasang di VPS/LAN dan dibuka dari HP.** Tidak perlu Node.js, tidak perlu FastAPI, tidak perlu dependency tambahan — `http.server` + stdlib.
 
 ---
 
-## 📡 Memilih Provider — **PENTING!**
+## 🚀 Quick Start
 
-### ⚠️ Provider = Faktor Penentu Hasil
-
-Jangan anggap remeh pemilihan provider. **Kualitas nomor yang disewa langsung mempengaruhi seberapa sering kamu dapat link.** Berikut faktornya:
-
-| Faktor | Dampak |
-|---|---|
-| **Nomor bekas / recycled** | Nomor yang sudah dipakai user lain → kemungkinan besar sudah klaim promo → **link rate turun drastis** |
-| **Nomor fresh / virgin** | Nomor baru yang belum pernah klaim → **link rate tinggi** |
-| **Stok tersedia** | Provider dengan stok konsisten → farming lancar tanpa nunggu |
-| **OTP delivery** | Provider yang OTP-nya cepat masuk → siklus hunt lebih efisien |
-| **Harga per nomor** | Lebih murah = bisa lebih banyak attempt per dollar |
-
-### 🔌 Provider Bawaan
-
-JioFarm sudah include client untuk 2 provider:
-
-| Provider | Status | Produk | Harga Estimasi | Catatan |
-|---|---|---|---|---|
-| **GrizzlySMS** | ✅ Ready | `jio` | $0.20–$1.00 | Stabil, OTP reliable, API simpel |
-| **5SIM** | ⚠️ Partial | `jiomart` | ~$0.05 | Client sudah siap, tapi API buy untuk jiomart sering "no free phones" meskipun stok web ada |
-
-### 🔄 Cara Ganti Provider
-
-Cukup edit `.env`:
-
-```env
-# Pilih provider: grizzlysms, fivesim
-PROVIDER=grizzlysms
-
-# GrizzlySMS
-GRIZZLY_API_KEY=key_kamu_disini
-
-# 5SIM (kalau pakai PROVIDER=fivesim)
-FIVESIM_API_KEY=token_jwt_kamu_disini
-```
-
-Jalankan seperti biasa — nggak perlu ubah command apapun:
-```bash
-python -m jiofarm run --max-price 0.5
-```
-
-### 🧩 Arsitektur Multi-Provider
-
-JioFarm pakai **Protocol interface** (`SMSProvider`) — semua provider cukup implementasi method yang sama:
-
-```
-                 ┌─────────────┐
-                 │  hunter.py  │  ← orchestrator (generic)
-                 └──────┬──────┘
-                        │ SMSProvider Protocol
-            ┌───────────┼───────────┐
-      ┌─────┴─────┐           ┌─────┴─────┐
-      │ GrizzlySMS │           │  FiveSim  │   ← built-in
-      └───────────┘           └───────────┘
-                                  │
-                            ┌─────┴─────┐
-                            │  Provider  │   ← gampang ditambah
-                            │  Baru      │
-                            └───────────┘
-```
-
-### 🔍 Provider Alternatif yang Bisa Kamu Coba
-
-Jio nggak cuma ada di GrizzlySMS. Berikut provider lain yang punya layanan nomor India — **luangkan waktu riset provider yang paling cocok:**
-
-| Provider | URL | Catatan |
-|---|---|---|
-| **SMS-Activate** | sms-activate.org | Banyak pilihan operator India, harga kompetitif, API matang |
-| **SMSPool** | smspool.net | Stok India lumayan, API well-documented |
-| **SMSMan** | sms-man.com | Ada Jio di katalog, harganya bervariasi |
-| **5SIM** | 5sim.net | Client sudah built-in, tapi jiomart API-nya flaky — cek berkala |
-| **TextVerified** | textverified.com | US-focused tapi kadang ada India |
-| **SMSCodes** | smscodes.io | Relatif baru, harga murah |
-
-### 🛠️ Cara Nambah Provider Sendiri
-
-JioFarm didesain supaya gampang ditambah provider baru. Buat file di `jiofarm/<nama_provider>/client.py`:
-
-```python
-class ProviderBaru:
-    def balance(self) -> float: ...
-    def rent(self, max_price: float | None = None) -> tuple[str, str]: ...
-    def status(self, act_id: str) -> tuple[str, str | None]: ...
-    def ready(self, act_id: str) -> None: ...
-    def complete(self, act_id: str) -> None: ...
-    def cancel(self, act_id: str) -> None: ...
-```
-
-Lalu daftarin di factory function di `hunter.py`. Method-method ini mengikuti Protocol `SMSProvider` — nggak perlu inheritance, cukup duck-typing.
-
-### 🎯 Tips Mencari Provider Bagus
-
-1. **Cek katalog mereka** — pastikan ada "Jio" (bukan cuma "MyJio" atau "India Any")
-2. **Tes beli manual** — coba beli 1 nomor lewat web dulu sebelum topup besar. Kalau sering "no numbers", skip
-3. **Cek komunitas** — forum seperti BlackHatWorld, LowEndTalk, atau grup Telegram sering ada review provider
-4. **Bandingkan harga** — $0.05 vs $0.50 per nomor = 10x lebih banyak attempt dengan budget yang sama
-5. **OTP delivery time** — provider yang OTP-nya lambat bikin siklus hunt lebih panjang, less efficient
-6. **Refund policy** — provider yang auto-refund nomor gagal lebih hemat dalam jangka panjang
-
-> **Realita:** Nggak semua nomor Jio dapat promo Google AI Pro — ini pure RNG. Tapi nomor fresh dari provider yang jarang dipakai hunter lain punya chance lebih tinggi. **Provider yang sama yang dipakai rame-rame hunter lain = nomornya sudah banyak yang klaim = link rate rendah.**
-
----
-
-## 📋 Requirements
-
-| Requirement | Minimum | Notes |
-|---|---|---|
-| Python | 3.9+ | [Download](https://www.python.org/downloads/) |
-| Akun SMS Provider | — | Lihat [§ Memilih Provider](#-memilih-provider---penting) di atas |
-| API Key Provider | — | Dari dashboard provider masing-masing |
-| Telegram Bot *(optional)* | — | Buat notifikasi real-time |
-
----
-
-## 🚀 Install — Semua Platform
-
-### 1. Clone / Download
+### 1. Clone
 
 ```bash
-git clone https://github.com/hirotomasato/jiofarm.git
-cd jiofarm
+git clone https://github.com/unicornlite/jioharvest.git
+cd jioharvest
 ```
 
-Atau download ZIP dan extract.
+### 2. Setup environment
 
-### 2. Buat Virtual Environment
-
-**Windows (PowerShell / cmd):**
-```powershell
+```bash
 python -m venv venv
+
+# Windows
 venv\Scripts\activate
-```
 
-**macOS / Linux:**
-```bash
-python3 -m venv venv
+# macOS / Linux
 source venv/bin/activate
-```
 
-### 3. Install Dependencies
-
-```bash
 pip install -e .
 ```
 
-Ini akan menginstall semua dependency: `requests`, `python-dotenv`, `rich`, `typer`.
+### 3. Test tanpa modal (recommended!)
 
-### 4. Setup `.env`
-
-Copy `.env.example` ke `.env`:
-
-**Windows:**
-```powershell
-copy .env.example .env
-```
-
-**macOS / Linux:**
 ```bash
-cp .env.example .env
+python -m jiofarm run --dry-run --count 3 --concurrency 2
 ```
 
-Buka `.env` dan isi:
+Mode `--dry-run` menggunakan **Mock Provider** internal — tidak perlu API key, tidak perlu topup, tidak perlu internet ke provider SMS. Cocok untuk testing dan eksperimen.
+
+### 4. Setup nyata
+
+Copy `.env.example` ke `.env`, isi API key provider:
 
 ```env
-# Pilih provider
+# Pilih provider: grizzlysms, fivesim, mock (untuk testing)
 PROVIDER=grizzlysms
-
-# API key provider (sesuai pilihan di atas)
-GRIZZLY_API_KEY=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-
-# Opsional: batasan harga & concurrency
-MAX_PRICE=1.0
-CONCURRENCY=2
+GRIZZLY_API_KEY=key_kamu_disini
 ```
 
-> **Dapat API key:** Login ke provider masing-masing → Dashboard → API Key / Token
+Jalankan:
+
+```bash
+python -m jiofarm run --max-price 0.5 --duration 2h
+```
 
 ---
 
-## 🎮 Cara Pakai
+## 🎮 CLI Commands
 
-### Interactive Menu (rekomendasi)
+| Command | Fungsi |
+|---|---|
+| `python -m jiofarm` | Interactive menu |
+| `python -m jiofarm run --dry-run` | **Test tanpa modal** (Mock Provider) |
+| `python -m jiofarm run --count 5 -c 2` | 5 nomor, 2 worker paralel |
+| `python -m jiofarm run --duration 6h --target 3` | 6 jam atau sampai 3 link |
+| `python -m jiofarm balance` | Cek saldo provider |
+| `python -m jiofarm stats` | Statistik + cost/link + hit rate |
+| `python -m jiofarm links` | Lihat semua link tersimpan |
+| `python -m jiofarm links --out links.txt` | Export ke file |
+| `python -m jiofarm web` | **WebUI dashboard** (port 9121) |
 
-```bash
-python -m jiofarm
-```
-
-Tampil menu pilihan:
-```
-┌──────────────────────────────────────┐
-│ 🦁  JioFarm — Google AI Pro Hunter  │
-│ Panen link redeem Gemini Pro dari Jio│
-└──────────────────────────────────────┘
-
-  1   Run Hunter
-  2   Check Balance
-  3   View Stats
-  4   Export Links
-  5   Quit
-```
-
-### Command Langsung
+### WebUI
 
 ```bash
-# Cek saldo provider
-python -m jiofarm balance
+# Dashboard lokal
+python -m jiofarm web
 
-# 1x hunt dengan max price $0.5 (mode hemat)
-python -m jiofarm run --max-price 0.5
+# Bind ke LAN (akses dari HP di jaringan yang sama)
+python -m jiofarm web --host 0.0.0.0 --port 9121
 
-# 5x hunt paralel
-python -m jiofarm run --count 5 --concurrency 2
-
-# Jalan selama 6 jam, max price $0.5
-python -m jiofarm run --duration 6h --max-price 0.5
-
-# Berhenti setelah dapat 3 link
-python -m jiofarm run --target 3 --max-price 0.5
-
-# Lihat statistik
-python -m jiofarm stats
-
-# Export link ke file
-python -m jiofarm links --out links.txt
+# Custom database
+python -m jiofarm web --db my_results.db
 ```
+
+---
+
+## 📡 Provider
+
+### Multi-Provider Architecture
+
+JioHarvest support **3 provider** dengan arsitektur Protocol interface. Ganti provider tinggal 1 baris di `.env`:
+
+| Provider | Status | Produk | Harga | Cara |
+|---|---|---|---|---|
+| **Mock** | ✅ Dev mode | — | $0 | `--dry-run` |
+| **GrizzlySMS** | ✅ Ready | `jio` | $0.20–$1.00 | `PROVIDER=grizzlysms` |
+| **5SIM** | ⚠️ Partial | `jiomart` | ~$0.05 | `PROVIDER=fivesim` |
+
+Untuk informasi lengkap tentang pemilihan provider, tips nomor fresh, dan cara menambah provider kustom, lihat [dokumentasi provider lengkap](#).
 
 ---
 
@@ -279,57 +158,82 @@ python -m jiofarm links --out links.txt
 
 | Variable | Default | Deskripsi |
 |---|---|---|
-| `PROVIDER` | `grizzlysms` | Provider yang dipakai: `grizzlysms` atau `fivesim` |
-| `GRIZZLY_API_KEY` | *(wajib jika provider=grizzlysms)* | API key dari dashboard GrizzlySMS |
-| `FIVESIM_API_KEY` | *(wajib jika provider=fivesim)* | JWT token dari dashboard 5SIM |
-| `GRIZZLY_PRODUCT` | `jio` | Produk di GrizzlySMS (default sudah benar) |
-| `FIVESIM_PRODUCT` | `jiomart` | Produk di 5SIM (default sudah benar) |
-| `MAX_PRICE` | `1.0` | Harga maks per nomor (USD). `0.5` = mode hemat |
-| `CANCEL_DELAY_SECONDS` | `150` | Detik sebelum refund nomor gagal |
-| `OTP_FAIL_DELAY_SECONDS` | `420` | Detik sebelum refund saat OTP gagal |
+| `PROVIDER` | `grizzlysms` | `grizzlysms`, `fivesim`, atau `mock` |
+| `GRIZZLY_API_KEY` | — | API key dari GrizzlySMS |
+| `FIVESIM_API_KEY` | — | JWT token dari 5SIM |
+| `MAX_PRICE` | `1.0` | Harga maks per nomor (USD) |
 | `CONCURRENCY` | `2` | Jumlah worker paralel |
-| `DB_PATH` | `results.db` | Path file database SQLite |
-| `TG_BOT_TOKEN` | *(optional)* | Token bot Telegram dari @BotFather |
-| `TG_CHAT_ID` | *(optional)* | Chat ID Telegram dari @userinfobot |
+| `DB_PATH` | `results.db` | Path database SQLite |
+| `TG_BOT_TOKEN` | *(optional)* | Token bot Telegram |
+| `TG_CHAT_ID` | *(optional)* | Chat ID Telegram |
+| `WEBHOOK_URLS` | *(optional)* | URL Discord/Slack/ntfy (pisahkan dengan koma) |
 
 ---
 
-## 🔔 Setup Notifikasi Telegram
+## 🔔 Notifikasi Multi-Channel
 
-1. Buka Telegram, chat [@BotFather](https://t.me/BotFather)
-2. Kirim `/newbot` → ikuti instruksi → dapat **Bot Token**
-3. Chat [@userinfobot](https://t.me/userinfobot) → kirim `/start` → dapat **Chat ID**
-4. Buka `.env`, uncomment & isi:
+Selain Telegram, JioHarvest support **webhook generik** untuk Discord, Slack, ntfy, atau webhook kustom lainnya:
 
 ```env
-TG_BOT_TOKEN=123456:ABCdefGHIjklMNOpqrsTUVwxyz
-TG_CHAT_ID=987654321
-```
+# Discord
+WEBHOOK_URLS=https://discord.com/api/webhooks/xxx/yyy
 
-Setiap kali link ditemukan, bot akan kirim pesan:
-
-```
-🎯 Google AI Pro link!
-
-Nomor : +919876543210
-Link :
-https://serviceactivation.google.com/...
+# Discord + Slack barengan
+WEBHOOK_URLS=https://discord.com/api/webhooks/xxx/yyy,https://hooks.slack.com/services/xxx/yyy/zzz
 ```
 
 ---
 
-## 📁 Struktur Project
+## 📊 Analytics
+
+JioHarvest menyimpan setiap hunt dengan detail:
+- Nomor telepon
+- Cost per nomor
+- Status login & link
+- Timestamp
+
+Available via:
+- `jiofarm stats` — CLI summary
+- `jiofarm web` → `http://localhost:9121/api/stats` — JSON API
+- WebUI dashboard — kartu visual
+
+---
+
+## 🧠 Cara Kerja
 
 ```
-jiofarm/
+[Mock/Grizzly/5SIM]    [Jio Selfcare]         [Google APIs]
+     │                      │                      │
+ 1. sewa nomor ──────────► 2. kirim OTP             │
+     │                 3. terima OTP ◄───┐           │
+     │                 4. validate OTP ──┘           │
+     │                 5. login sukses ──────────► 6. hunt link
+     │                                           7. link ketemu!
+     │                      │                      │
+ 8. complete / refund ◄─────┘                      │
+```
+
+Setiap worker menjalankan siklus ini secara paralel. Nomor yang gagal di-refund otomatis oleh `RefundWorker`.
+
+---
+
+## 📁 Project Structure
+
+```
+jioharvest/
 ├── jiofarm/                  # Package Python
 │   ├── __init__.py
 │   ├── __main__.py           # Entry point
 │   ├── cli.py                # Typer CLI + Rich Live Dashboard
 │   ├── config.py             # Load .env + dataclass config
-│   ├── console.py            # Rich Console + Telegram helper
-│   ├── shield.py             # DNS-over-HTTPS (Cloudflare)
+│   ├── console.py            # Rich Console + multi-channel notif
 │   ├── hunter.py             # Orchestrator hunt cycle (generic/provider-agnostic)
+│   ├── shield.py             # DNS-over-HTTPS (Cloudflare)
+│   ├── verify.py             # Link verification (baru!)
+│   ├── webui.py              # WebUI zero-dependency (baru!)
+│   ├── mock/                 # Mock provider untuk testing (baru!)
+│   │   ├── __init__.py
+│   │   └── client.py
 │   ├── grizzly/
 │   │   ├── __init__.py
 │   │   ├── client.py         # GrizzlySMS API client
@@ -344,81 +248,32 @@ jiofarm/
 │   │   └── hunt.py           # Link hunting endpoints
 │   └── storage/
 │       ├── __init__.py
-│       └── store.py          # SQLite hasil hunt
-├── requirements.txt
+│       └── store.py          # SQLite + analytics (upgraded)
 ├── pyproject.toml
 ├── .env.example
-└── .gitignore
+└── README.md
 ```
-
----
-
-## 🧠 Cara Kerja
-
-```
-    [SMS Provider]            [Jio Selfcare]            [Google APIs]
-    (Grizzly/5SIM/dll)             │                         │
-         │                         │                         │
-    1. sewa nomor ────────────► 2. kirim OTP                 │
-         │                    3. terima OTP ◄───┐             │
-         │                    4. validate OTP ──┘             │
-         │                    5. login sukses ───────────► 6. hunt link
-         │                                              7. link ketemu!
-         │                         │                         │
-    8. complete / refund ◄─────────┘                         │
-```
-
-Setiap worker menjalankan siklus ini secara paralel. Nomor yang gagal di-refund otomatis oleh `RefundWorker`.
-
-**Refund logic:**
-- **Bukan pelanggan Jio** → refund agresif (retry tiap 30 detik setelah 120s)
-- **OTP nggak masuk** → refund setelah 420 detik (7 menit)
-- **Gagal sebelum login** → refund setelah 150 detik
-- **Login sukses** → dana dianggap terpakai (complete), tidak refund
 
 ---
 
 ## 🛡️ DNS Shield
 
-Beberapa ISP (terutama di Indonesia) memblokir domain provider SMS via DNS. JioFarm punya **DNS-over-HTTPS shield** yang me-resolve domain lewat Cloudflare (1.1.1.1), bypass pemblokiran ISP.
-
-Aktif otomatis tiap kali `run`.
+Beberapa ISP (terutama di Indonesia) memblokir domain provider SMS via DNS. JioHarvest punya **DNS-over-HTTPS shield** yang me-resolve domain lewat Cloudflare (1.1.1.1), bypass pemblokiran ISP. Aktif otomatis tiap kali `run`.
 
 ---
 
-## ❓ FAQ
+## ⚠️ Disclaimer
 
-**Q: Berapa biaya per nomor?**
-A: Tergantung provider. GrizzlySMS Jio ~$0.20–$1.00. 5SIM ~$0.05. Pakai `--max-price 0.5` untuk mode hemat.
-
-**Q: Kenapa login sukses tapi nggak dapat link?**
-A: Nggak semua nomor Jio dapat promo Google AI Pro — ini pure RNG. Baca [§ Memilih Provider](#-memilih-provider---penting) untuk tips meningkatkan link rate.
-
-**Q: Kenapa link rate saya rendah banget?**
-A: Kemungkinan provider kamu punya nomor recycled (bekas dipakai hunter lain). **Coba cari provider yang lebih sepi peminat** — nomor fresh = chance lebih tinggi. Jangan cuma stuck di 1 provider.
-
-**Q: Dana bisa hangus?**
-A: Kalau login sukses tapi nggak ada link, dana tetap terpakai. Kalau gagal sebelum login, dana di-refund otomatis. Lihat refund logic di atas.
-
-**Q: Aman nggak pakai API key di `.env`?**
-A: `.env` sudah ada di `.gitignore` — tidak akan ke-commit ke Git. Jangan share file `.env` ke siapapun.
-
-**Q: Bisa pakai provider selain GrizzlySMS?**
-A: Bisa. JioFarm support multi-provider. Pilih `PROVIDER=fivesim` atau tambah provider sendiri. Lihat [§ Memilih Provider](#-memilih-provider---penting).
-
-**Q: Kok 5SIM jiomart nggak bisa dipakai?**
-A: Client 5SIM sudah siap, tapi API buy mereka untuk `jiomart` sering "no free phones" meskipun stok di web ada. Ini bug dari sisi 5SIM. Cek berkala siapa tahu sudah difix. Kalau sudah normal, tinggal ganti `PROVIDER=fivesim` di `.env`.
+- **Grey area** — jual link hasil promo Jio ke non-subscriber melanggar ToS Google. Risiko akun sepenuhnya di tangan pengguna.
+- **Bukan bisnis jangka panjang** — promo ini ada batas waktu. Jangan jadikan core business.
+- **Pure RNG** — tidak semua nomor dapet link. Hit rate tergantung kualitas nomor provider.
 
 ---
 
 ## 📜 License
 
-MIT © 2024
+MIT © 2024 — Original by [hirotomasato](https://github.com/hirotomasato/jiofarm). Fork & upgrade by [unicornlite](https://github.com/unicornlite).
 
 ---
 
-<div align="center">
-
-**🦁 Happy Hunting! — Dan ingat: provider yang bagus = hasil yang bagus.**
-
-</div>
+**🦁 Happy Harvesting! — Provider bagus = hasil bagus. Mock dulu, baru gas.**
